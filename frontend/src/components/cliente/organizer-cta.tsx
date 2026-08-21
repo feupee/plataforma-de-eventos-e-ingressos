@@ -20,15 +20,11 @@ export function OrganizerCTA() {
         </div>
 
         {/* Imagem + botões */}
-        <div className="flex flex-col justify-center bg-card p-6">
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Link href="/organizador">
-              <Button className="h-12 px-8 text-base">Crie seu evento</Button>
-            </Link>
-
-            <Link href="/cliente/como-funciona">
-              <Button variant="outline" className="h-12 px-8 text-base">
-                Veja como funciona
+        <div className="flex min-w-0 flex-col justify-center bg-card p-6">
+          <div className="mt-4 flex w-full flex-col gap-3 lg:flex-row lg:justify-center">
+            <Link href="/organizador" className="w-full lg:w-auto">
+              <Button className="h-12 w-full px-6 text-base lg:w-auto lg:px-8">
+                Crie seu evento
               </Button>
             </Link>
           </div>

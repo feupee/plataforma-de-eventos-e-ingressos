@@ -72,15 +72,19 @@ export function EventCarousel() {
               key={event.id}
               className="basis-[90%] md:basis-[85%] lg:basis-[80%]"
             >
-              <div className="relative h-[300px] w-full overflow-hidden rounded-xl md:h-[400px] lg:h-[480px]">
-                {/* Imagem */}
+              <div className="relative h-[300px] w-full overflow-hidden rounded-xl">
                 <Image
                   src={event.image}
                   alt={event.title}
                   fill
-                  loading={index === 0 ? "eager" : "lazy"}
-                  sizes="(max-width: 640px) 90vw, (max-width: 768px) 85vw, 80vw"
+                  sizes="80vw"
                   className="object-cover"
+                />
+
+                <Link
+                  href={`/cliente/reserva`}
+                  className="absolute inset-0 z-10"
+                  aria-label={`Comprar ingresso para ${event.title}`}
                 />
 
                 {/* Escurece o lado esquerdo */}
@@ -104,8 +108,8 @@ export function EventCarousel() {
                     <span>{event.location}</span>
                   </div>
 
-                  <div className="mt-6">
-                    <Link href={`/cliente/eventos/${event.id}`}>
+                  <div className="relative z-20 mt-6">
+                    <Link href={`/cliente/reserva`}>
                       <Button>Ver ingressos</Button>
                     </Link>
                   </div>

@@ -39,7 +39,7 @@ export function EventListCarousel({ title, events }: EventListCarouselProps) {
               key={event.id}
               className="basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4"
             >
-              <Link href={`/cliente/eventos/${event.id}`}>
+              <Link href={`/cliente/reserva`}>
                 <div className="group cursor-pointer">
                   <div className="relative aspect-video w-full overflow-hidden rounded-xl">
                     <Image
@@ -47,21 +47,13 @@ export function EventListCarousel({ title, events }: EventListCarouselProps) {
                       alt={event.title}
                       fill
                       sizes="(max-width: 640px) 85vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="object-cover"
                     />
                   </div>
 
-                  <div className="mt-3">
-                    <h3 className="text-lg font-semibold">{event.title}</h3>
-
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {event.date}
-                    </p>
-
-                    <p className="text-sm text-muted-foreground">
-                      {event.location}
-                    </p>
-                  </div>
+                  <h3>{event.title}</h3>
+                  <p>{event.date}</p>
+                  <p>{event.location}</p>
                 </div>
               </Link>
             </CarouselItem>
