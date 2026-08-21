@@ -81,10 +81,12 @@ export function Header() {
                 Configurações da conta
               </DropdownMenuItem>
 
-              <DropdownMenuItem>
-                <TicketPlus />
-                Organizar evento
-              </DropdownMenuItem>
+              <Link href="/organizador">
+                <DropdownMenuItem>
+                  <TicketPlus />
+                  Organizar evento
+                </DropdownMenuItem>
+              </Link>
             </DropdownMenuGroup>
 
             <DropdownMenuSeparator />
