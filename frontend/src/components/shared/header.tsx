@@ -2,22 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { LogOut, Search, Settings, TicketPlus } from "lucide-react";
+import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 import { ThemeToggle } from "./theme-toggle";
+import AvatarComponent from "../shared/avatar";
 
 export function Header() {
   return (
@@ -56,49 +46,7 @@ export function Header() {
       <div className="flex flex-1 items-center justify-end gap-3">
         <ThemeToggle />
 
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <button
-                type="button"
-                className="rounded-full outline-none"
-                aria-label="Abrir menu do usuário"
-              />
-            }
-          >
-            <Avatar className="cursor-pointer">
-              <AvatarImage src="/usuario.png" alt="Usuário" />
-              <AvatarFallback>FL</AvatarFallback>
-            </Avatar>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Minha conta</DropdownMenuLabel>
-
-              <DropdownMenuItem>
-                <Settings />
-                Configurações da conta
-              </DropdownMenuItem>
-
-              <Link href="/organizador">
-                <DropdownMenuItem>
-                  <TicketPlus />
-                  Organizar evento
-                </DropdownMenuItem>
-              </Link>
-            </DropdownMenuGroup>
-
-            <DropdownMenuSeparator />
-
-            <DropdownMenuGroup>
-              <DropdownMenuItem variant="destructive">
-                <LogOut />
-                Sair da conta
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <AvatarComponent />
       </div>
     </header>
   );
