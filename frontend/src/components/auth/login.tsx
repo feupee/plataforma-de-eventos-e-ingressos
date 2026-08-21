@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Link from "next/dist/client/link";
 
 export function Login() {
   const [isCadastro, setIsCadastro] = useState(false);
@@ -83,9 +84,12 @@ export function Login() {
       </CardContent>
 
       <CardFooter className="flex-col gap-2 pt-2">
-        <Button type="submit" className="w-full">
-          {isCadastro ? "Cadastrar" : "Login"}
-        </Button>
+        {/* Refazer com autenticação */}
+        <Link href="/cliente" className="w-full">
+          <Button type="submit" className="w-full">
+            {isCadastro ? "Cadastrar" : "Login"}
+          </Button>
+        </Link>
       </CardFooter>
     </Card>
   );

@@ -1,5 +1,5 @@
-import { Login } from "@/components/login";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { Login } from "@/components/auth/login";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 
 export default function Home() {
   return (
