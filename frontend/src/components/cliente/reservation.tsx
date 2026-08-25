@@ -27,6 +27,8 @@ import { Button } from "@/components/ui/button";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+import { PaymentSimulation } from "@/components/cliente/payment-simulation";
+
 export function Reservation() {
   const params = useParams<{
     id: string;
@@ -190,9 +192,7 @@ export function Reservation() {
               o pagamento não é concluído.
             </p>
 
-            <Button className="mt-6 h-12 w-full" disabled>
-              Continuar para pagamento
-            </Button>
+            <PaymentSimulation reservation={reservation} />
 
             <p className="mt-2 text-xs text-muted-foreground">
               O pagamento será conectado ao ambiente de testes do provedor na

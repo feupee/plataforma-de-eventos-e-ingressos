@@ -3,7 +3,13 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models import EventStatus, ReservationStatus
+from app.models import (
+    EventStatus,
+    PaymentStatus,
+    ReservationStatus,
+)
+
+from typing import Literal
 
 
 # =========================================================
@@ -183,3 +189,28 @@ class EventAvailabilityResponse(BaseModel):
     capacity: int
     reserved: int
     available: int
+
+# =========================================================
+# PAYMENT
+# =========================================================
+
+
+class PaymentSimulationRequest(BaseModel):
+    reservation_id: int
+
+    result: Literal[
+        "APPROVED",
+        "REJECTED",
+    ]
+
+
+class PaymentSimulationResponse(BaseModel):
+    payment_id: int
+    reservation_id: int
+
+    payment_status: PaymentStatus
+    reservation_status: ReservationStatus
+
+    ticket_count: int
+
+    message: str
