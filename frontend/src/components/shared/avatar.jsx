@@ -1,6 +1,7 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Settings, TicketPlus, Ticket } from "lucide-react";
 import Link from "next/link";
+import { LogOut, Settings, Ticket, TicketPlus } from "lucide-react";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import {
   DropdownMenu,
@@ -34,20 +35,16 @@ export default function AvatarComponent() {
         <DropdownMenuGroup>
           <DropdownMenuLabel>Minha conta</DropdownMenuLabel>
 
-          <DropdownMenuItem>
+          <DropdownMenuItem render={<Link href="/cliente/configuracoes" />}>
             <Settings />
             Configurações da conta
           </DropdownMenuItem>
 
-          <Link href="../organizador">
-            <DropdownMenuItem>
-              <TicketPlus />
-              Organizar evento
-            </DropdownMenuItem>
-          </Link>
-        </DropdownMenuGroup>
+          <DropdownMenuItem render={<Link href="/organizador" />}>
+            <TicketPlus />
+            Organizar evento
+          </DropdownMenuItem>
 
-        <DropdownMenuGroup>
           <DropdownMenuItem render={<Link href="/cliente/ingressos" />}>
             <Ticket />
             Meus ingressos

@@ -1,11 +1,9 @@
 import { Login } from "@/components/auth/login";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
-import { redirect } from "next/dist/client/components/navigation";
 
-export default function Home() {
-  redirect("/cliente");
+export default function LoginPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center">
+    <main className="flex min-h-screen items-center justify-center">
       <Login />
 
       <div className="fixed bottom-6 right-6">
