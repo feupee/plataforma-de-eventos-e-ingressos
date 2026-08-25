@@ -1,5 +1,4 @@
-import { TicketCard } from "@/components/cliente/ticket-card";
-import { meusIngressos } from "@/lib/mock-tickets";
+import { MyTickets } from "@/components/cliente/my-tickets";
 
 export default function IngressosPage() {
   return (
@@ -12,34 +11,7 @@ export default function IngressosPage() {
         </p>
       </div>
 
-      {meusIngressos.length === 0 ? (
-        <div className="rounded-xl border p-10 text-center">
-          <h2 className="text-xl font-semibold">
-            Você ainda não possui ingressos
-          </h2>
-
-          <p className="mt-2 text-muted-foreground">
-            Quando realizar uma compra, seus ingressos aparecerão aqui.
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
-          {meusIngressos.map((ticket) => (
-            <TicketCard
-              key={ticket.id}
-              eventName={ticket.eventName}
-              date={ticket.date}
-              time={ticket.time}
-              location={ticket.location}
-              ticketType={ticket.ticketType}
-              price={ticket.price}
-              image={ticket.image}
-              code={ticket.code}
-              status={ticket.status}
-            />
-          ))}
-        </div>
-      )}
+      <MyTickets />
     </section>
   );
 }

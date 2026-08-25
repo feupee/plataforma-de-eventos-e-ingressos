@@ -7,6 +7,8 @@ from app.models import (
     EventStatus,
     PaymentStatus,
     ReservationStatus,
+    TicketStatus,
+    TicketType,
 )
 
 from typing import Literal
@@ -214,3 +216,30 @@ class PaymentSimulationResponse(BaseModel):
     ticket_count: int
 
     message: str
+
+# =========================================================
+# TICKET
+# =========================================================
+
+
+class TicketEventResponse(BaseModel):
+    id: int
+    title: str
+    event_date: datetime
+    location: str
+    image_url: str | None
+
+
+class TicketResponse(BaseModel):
+    id: int
+    reservation_id: int
+
+    ticket_type: TicketType
+    price: Decimal
+
+    code: str
+    status: TicketStatus
+
+    validated_at: datetime | None
+
+    event: TicketEventResponse
