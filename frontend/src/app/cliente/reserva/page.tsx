@@ -1,9 +1,5 @@
-import { Reservation } from "@/components/cliente/reservation";
+import { redirect } from "next/navigation";
 
 export default function ReservaPage() {
-  return (
-    <main className="w-full">
-      <Reservation />
-    </main>
-  );
+  redirect("/cliente/eventos");
 }

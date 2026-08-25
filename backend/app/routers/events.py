@@ -40,6 +40,10 @@ def list_events(
         alias="status",
         description="Filtra pelo status do evento.",
     ),
+    organizer_id: int | None = Query(
+        default=None,
+        description="Filtra pelo organizador.",
+    ),
     db: Session = Depends(get_db),
 ):
     query = select(Event)
@@ -63,6 +67,11 @@ def list_events(
     if event_status:
         query = query.where(
             Event.status == event_status
+        )
+
+    if organizer_id is not None:
+        query = query.where(
+            Event.organizer_id == organizer_id
         )
 
     query = query.order_by(

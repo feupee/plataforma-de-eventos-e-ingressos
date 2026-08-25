@@ -176,7 +176,7 @@ function EventCard({ event }: EventCardProps) {
   const halfPrice = Number(event.half_price);
 
   return (
-    <Link href="/cliente/reserva" className="group">
+    <Link href={`/cliente/eventos/${event.id}/reserva`} className="group">
       <article className="h-full overflow-hidden rounded-xl border bg-card transition-colors hover:border-primary">
         {/* Imagem */}
         <div className="relative aspect-video w-full overflow-hidden bg-muted">

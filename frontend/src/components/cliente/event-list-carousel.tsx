@@ -39,7 +39,7 @@ export function EventListCarousel({ title, events }: EventListCarouselProps) {
               key={event.id}
               className="basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4"
             >
-              <Link href={`/cliente/reserva`}>
+              <Link href={`/cliente/eventos/${event.id}/reserva`}>
                 <div className="group cursor-pointer">
                   <div className="relative aspect-video w-full overflow-hidden rounded-xl">
                     <Image

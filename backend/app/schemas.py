@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models import EventStatus
+from app.models import EventStatus, ReservationStatus
 
 
 # =========================================================
@@ -134,3 +134,52 @@ class EventResponse(EventBase):
     organizer_id: int
     status: EventStatus
     created_at: datetime
+
+# =========================================================
+# RESERVATION
+# =========================================================
+
+
+class ReservationCreate(BaseModel):
+    # Temporário até a autenticação.
+    user_id: int
+
+    event_id: int
+
+    full_quantity: int = Field(
+        default=0,
+        ge=0,
+    )
+
+    half_quantity: int = Field(
+        default=0,
+        ge=0,
+    )
+
+
+class ReservationResponse(BaseModel):
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
+
+    id: int
+
+    user_id: int
+    event_id: int
+
+    full_quantity: int
+    half_quantity: int
+
+    total_amount: Decimal
+
+    status: ReservationStatus
+
+    created_at: datetime
+
+
+class EventAvailabilityResponse(BaseModel):
+    event_id: int
+
+    capacity: int
+    reserved: int
+    available: int

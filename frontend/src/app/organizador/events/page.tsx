@@ -1,7 +1,5 @@
-export default function EventosPage() {
-  return (
-    <div>
-      <h1 className="text-3xl font-bold">Meus eventos</h1>
-    </div>
-  );
+import { OrganizerEvents } from "@/components/organizador/organizer-events";
+
+export default function OrganizerEventsPage() {
+  return <OrganizerEvents />;
 }

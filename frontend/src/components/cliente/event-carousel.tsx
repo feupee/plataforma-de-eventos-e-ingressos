@@ -82,7 +82,7 @@ export function EventCarousel() {
                 />
 
                 <Link
-                  href={`/cliente/reserva`}
+                  href={`/cliente/eventos/${event.id}/reserva`}
                   className="absolute inset-0 z-10"
                   aria-label={`Comprar ingresso para ${event.title}`}
                 />
