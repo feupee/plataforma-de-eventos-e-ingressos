@@ -1,4 +1,19 @@
-export const meusIngressos = [
+export type TicketStatus = "VALID" | "USED";
+
+export type Ticket = {
+  id: number;
+  eventName: string;
+  date: string;
+  time: string;
+  location: string;
+  ticketType: string;
+  price: number;
+  image: string;
+  code: string;
+  status: TicketStatus;
+};
+
+export const meusIngressos: Ticket[] = [
   {
     id: 1,
     eventName: "Festival de Música 2026",
