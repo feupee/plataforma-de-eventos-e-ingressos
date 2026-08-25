@@ -1,4 +1,4 @@
-import type { Ticket } from "@/types/ticket";
+import type { Ticket, TicketValidation } from "@/types/ticket";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
@@ -19,6 +19,34 @@ export async function getTicket(ticketId: number): Promise<Ticket> {
 
   if (!response.ok) {
     throw new Error("Não foi possível carregar o ingresso.");
+  }
+
+  return response.json();
+}
+
+export async function validateTicket(
+  code: string,
+  eventId: number,
+  gateUserId: number,
+): Promise<TicketValidation> {
+  const response = await fetch(`${API_URL}/tickets/validate`, {
+    method: "POST",
+
+    headers: {
+      "Content-Type": "application/json",
+    },
+
+    body: JSON.stringify({
+      code,
+      event_id: eventId,
+      gate_user_id: gateUserId,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+
+    throw new Error(error?.detail ?? "Não foi possível validar o ingresso.");
   }
 
   return response.json();

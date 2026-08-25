@@ -243,3 +243,37 @@ class TicketResponse(BaseModel):
     validated_at: datetime | None
 
     event: TicketEventResponse
+
+# =========================================================
+# TICKET VALIDATION
+# =========================================================
+
+
+class TicketValidationRequest(BaseModel):
+    code: str = Field(
+        min_length=1,
+    )
+
+    event_id: int
+
+    # Temporário até JWT.
+    gate_user_id: int
+
+
+class TicketValidationResponse(BaseModel):
+    result: Literal[
+        "VALID",
+        "USED",
+        "INVALID",
+        "WRONG_EVENT",
+        "CANCELLED",
+    ]
+
+    message: str
+
+    ticket_id: int | None = None
+    event_id: int | None = None
+
+    ticket_type: TicketType | None = None
+
+    validated_at: datetime | None = None

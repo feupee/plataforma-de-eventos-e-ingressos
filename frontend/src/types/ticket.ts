@@ -25,3 +25,19 @@ export type Ticket = {
 
   event: TicketEvent;
 };
+
+export type TicketValidationResult =
+  "VALID" | "USED" | "INVALID" | "WRONG_EVENT" | "CANCELLED";
+
+export type TicketValidation = {
+  result: TicketValidationResult;
+
+  message: string;
+
+  ticket_id: number | null;
+  event_id: number | null;
+
+  ticket_type: TicketType | null;
+
+  validated_at: string | null;
+};

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+
 import {
   Camera,
   CheckCircle2,
@@ -9,94 +10,81 @@ import {
   Search,
   ShieldCheck,
   TicketCheck,
+  TriangleAlert,
   XCircle,
 } from "lucide-react";
 
 import { Html5QrcodeScanner, Html5QrcodeScanType } from "html5-qrcode";
 
-import { meusIngressos, Ticket } from "@/lib/mock-tickets";
+import { validateTicket } from "@/lib/api/tickets";
 
-import { Badge } from "@/components/ui/badge";
+import type { TicketValidation } from "@/types/ticket";
+
 import { Button } from "@/components/ui/button";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Input } from "@/components/ui/input";
+
 import { Label } from "@/components/ui/label";
 
-type ValidationStatus = "IDLE" | "VALID" | "INVALID" | "USED";
-
-type ValidationResult = {
-  status: ValidationStatus;
-  ticket?: Ticket;
-  message?: string;
-};
-
 export function TicketValidator() {
+  // Temporário até autenticação.
+  const gateUserId = 3;
+
+  const [eventId, setEventId] = useState("");
+
   const [manualCode, setManualCode] = useState("");
+
+  const [result, setResult] = useState<TicketValidation | null>(null);
+
+  const [loading, setLoading] = useState(false);
+
   const [scannerKey, setScannerKey] = useState(0);
 
-  const [result, setResult] = useState<ValidationResult>({
-    status: "IDLE",
-  });
+  const [error, setError] = useState<string | null>(null);
 
-  const usedCodes = useRef<Set<string>>(new Set());
+  async function processCode(code: string) {
+    const selectedEventId = Number(eventId);
 
-  function extractTicketCode(value: string) {
-    const trimmedValue = value.trim();
-
-    const prefix = "ingressolivre:ticket:";
-
-    if (trimmedValue.startsWith(prefix)) {
-      return trimmedValue.substring(prefix.length);
-    }
-
-    return trimmedValue;
-  }
-
-  function validateTicket(value: string) {
-    const code = extractTicketCode(value);
-
-    if (!code) {
-      setResult({
-        status: "INVALID",
-        message: "Código de ingresso inválido.",
-      });
+    if (!Number.isInteger(selectedEventId) || selectedEventId <= 0) {
+      setError("Informe o ID do evento antes de validar ingressos.");
 
       return;
     }
 
-    const ticket = meusIngressos.find((ticket) => ticket.code === code);
+    try {
+      setLoading(true);
+      setError(null);
 
-    if (!ticket) {
-      setResult({
-        status: "INVALID",
-        message: "Este ingresso não foi encontrado.",
-      });
+      const validation = await validateTicket(
+        code,
+        selectedEventId,
+        gateUserId,
+      );
 
-      return;
+      setResult(validation);
+    } catch (error) {
+      console.error(error);
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível validar o ingresso.",
+      );
+    } finally {
+      setLoading(false);
     }
-
-    if (ticket.status === "USED" || usedCodes.current.has(ticket.code)) {
-      setResult({
-        status: "USED",
-        ticket,
-        message: "Este ingresso já foi utilizado.",
-      });
-
-      return;
-    }
-
-    usedCodes.current.add(ticket.code);
-
-    setResult({
-      status: "VALID",
-      ticket,
-      message: "Entrada autorizada.",
-    });
   }
 
   useEffect(() => {
+    if (!eventId) {
+      return;
+    }
+
     const scanner = new Html5QrcodeScanner(
       "qr-reader",
+
       {
         fps: 10,
 
@@ -107,42 +95,36 @@ export function TicketValidator() {
 
         supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
       },
+
       false,
     );
 
     scanner.render(
-      (decodedText) => {
-        validateTicket(decodedText);
+      async (decodedText) => {
+        await scanner.clear();
 
-        scanner.clear().catch(() => {
-          // Ignora erro ao encerrar câmera após leitura.
-        });
+        await processCode(decodedText);
       },
+
       () => {
-        // Os erros enquanto a câmera procura um QR Code
-        // são esperados e não precisam ser exibidos.
+        // Erros durante a procura do QR
+        // são normais.
       },
     );
 
     return () => {
       scanner.clear().catch(() => {
-        // O scanner pode já estar encerrado.
+        // Scanner pode já estar fechado.
       });
     };
-  }, [scannerKey]);
+  }, [scannerKey, eventId]);
 
-  function handleManualValidation() {
-    validateTicket(manualCode);
-  }
-
-  function resetScanner() {
-    setResult({
-      status: "IDLE",
-    });
-
+  function resetValidation() {
+    setResult(null);
     setManualCode("");
+    setError(null);
 
-    setScannerKey((current) => current + 1);
+    setScannerKey((value) => value + 1);
   }
 
   return (
@@ -165,6 +147,34 @@ export function TicketValidator() {
         </div>
       </div>
 
+      {/* Seleção do evento */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="max-w-sm space-y-2">
+            <Label htmlFor="event-id">Evento da portaria</Label>
+
+            <Input
+              id="event-id"
+              type="number"
+              min="1"
+              value={eventId}
+              onChange={(event) => {
+                setEventId(event.target.value);
+
+                setResult(null);
+              }}
+              placeholder="Ex.: 1"
+            />
+
+            <p className="text-xs text-muted-foreground">
+              Temporariamente selecionamos o evento pelo ID. Depois da
+              autenticação, essa seleção poderá ser vinculada à operação da
+              portaria.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-8 lg:grid-cols-[1fr_0.9fr]">
         {/* Scanner */}
         <Card className="h-fit">
@@ -176,15 +186,19 @@ export function TicketValidator() {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            <div key={scannerKey} className="overflow-hidden rounded-xl border">
-              <div id="qr-reader" />
-            </div>
+            {eventId ? (
+              <div
+                key={scannerKey}
+                className="overflow-hidden rounded-xl border"
+              >
+                <div id="qr-reader" />
+              </div>
+            ) : (
+              <div className="rounded-xl border p-10 text-center text-muted-foreground">
+                Selecione o evento para habilitar o leitor.
+              </div>
+            )}
 
-            <p className="text-sm text-muted-foreground">
-              Autorize o acesso à câmera quando solicitado pelo navegador.
-            </p>
-
-            {/* Validação manual */}
             <div className="border-t pt-6">
               <div className="mb-4 flex items-center gap-2">
                 <Keyboard size={18} />
@@ -204,9 +218,8 @@ export function TicketValidator() {
                   />
 
                   <Button
-                    type="button"
-                    onClick={handleManualValidation}
-                    disabled={!manualCode.trim()}
+                    disabled={loading || !manualCode.trim() || !eventId}
+                    onClick={() => processCode(manualCode)}
                   >
                     <Search />
                     Validar
@@ -224,7 +237,11 @@ export function TicketValidator() {
           </CardHeader>
 
           <CardContent>
-            {result.status === "IDLE" && (
+            {error && (
+              <ValidationError message={error} onReset={resetValidation} />
+            )}
+
+            {!error && !result && (
               <div className="flex flex-col items-center py-12 text-center">
                 <TicketCheck size={56} className="text-muted-foreground" />
 
@@ -232,80 +249,14 @@ export function TicketValidator() {
                   Aguardando ingresso
                 </h2>
 
-                <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-                  Escaneie um QR Code ou informe manualmente o código do
-                  ingresso.
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Escaneie um QR Code ou informe o código manualmente.
                 </p>
               </div>
             )}
 
-            {result.status === "VALID" && result.ticket && (
-              <div>
-                <div className="flex flex-col items-center text-center">
-                  <CheckCircle2 size={64} className="text-green-600" />
-
-                  <h2 className="mt-4 text-2xl font-bold">
-                    Entrada autorizada
-                  </h2>
-
-                  <p className="mt-1 text-muted-foreground">
-                    Ingresso validado com sucesso.
-                  </p>
-                </div>
-
-                <TicketInformation ticket={result.ticket} status="Válido" />
-
-                <Button className="mt-6 w-full" onClick={resetScanner}>
-                  <RotateCcw />
-                  Validar próximo ingresso
-                </Button>
-              </div>
-            )}
-
-            {result.status === "USED" && result.ticket && (
-              <div>
-                <div className="flex flex-col items-center text-center">
-                  <XCircle size={64} className="text-destructive" />
-
-                  <h2 className="mt-4 text-2xl font-bold">
-                    Ingresso já utilizado
-                  </h2>
-
-                  <p className="mt-1 text-muted-foreground">
-                    A entrada deve ser recusada.
-                  </p>
-                </div>
-
-                <TicketInformation ticket={result.ticket} status="Utilizado" />
-
-                <Button
-                  variant="outline"
-                  className="mt-6 w-full"
-                  onClick={resetScanner}
-                >
-                  <RotateCcw />
-                  Validar próximo ingresso
-                </Button>
-              </div>
-            )}
-
-            {result.status === "INVALID" && (
-              <div className="flex flex-col items-center py-10 text-center">
-                <XCircle size={64} className="text-destructive" />
-
-                <h2 className="mt-4 text-2xl font-bold">Ingresso inválido</h2>
-
-                <p className="mt-2 text-muted-foreground">{result.message}</p>
-
-                <Button
-                  variant="outline"
-                  className="mt-6 w-full"
-                  onClick={resetScanner}
-                >
-                  <RotateCcw />
-                  Tentar novamente
-                </Button>
-              </div>
+            {!error && result && (
+              <ValidationResult result={result} onReset={resetValidation} />
             )}
           </CardContent>
         </Card>
@@ -314,51 +265,115 @@ export function TicketValidator() {
   );
 }
 
-type TicketInformationProps = {
-  ticket: Ticket;
-  status: "Válido" | "Utilizado";
+type ValidationResultProps = {
+  result: TicketValidation;
+  onReset: () => void;
 };
 
-function TicketInformation({ ticket, status }: TicketInformationProps) {
+function ValidationResult({ result, onReset }: ValidationResultProps) {
+  const configuration = {
+    VALID: {
+      title: "Entrada autorizada",
+
+      description: "Ingresso validado com sucesso.",
+
+      icon: <CheckCircle2 size={64} className="text-green-600" />,
+    },
+
+    USED: {
+      title: "Ingresso já utilizado",
+
+      description: "A entrada deve ser recusada.",
+
+      icon: <XCircle size={64} className="text-destructive" />,
+    },
+
+    INVALID: {
+      title: "Ingresso inválido",
+
+      description: result.message,
+
+      icon: <XCircle size={64} className="text-destructive" />,
+    },
+
+    WRONG_EVENT: {
+      title: "Evento incorreto",
+
+      description: "O ingresso pertence a outro evento.",
+
+      icon: <TriangleAlert size={64} className="text-destructive" />,
+    },
+
+    CANCELLED: {
+      title: "Ingresso cancelado",
+
+      description: "Este ingresso não pode ser utilizado.",
+
+      icon: <XCircle size={64} className="text-destructive" />,
+    },
+  };
+
+  const config = configuration[result.result];
+
   return (
-    <div className="mt-6 space-y-4 rounded-xl bg-muted p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm text-muted-foreground">Evento</p>
+    <div className="flex flex-col items-center py-8 text-center">
+      {config.icon}
 
-          <p className="font-semibold">{ticket.eventName}</p>
+      <h2 className="mt-5 text-2xl font-bold">{config.title}</h2>
+
+      <p className="mt-2 text-muted-foreground">{config.description}</p>
+
+      {result.ticket_id && (
+        <div className="mt-6 w-full rounded-xl bg-muted p-4 text-left text-sm">
+          <div className="flex justify-between">
+            <span>Ingresso</span>
+
+            <strong>#{result.ticket_id}</strong>
+          </div>
+
+          {result.ticket_type && (
+            <div className="mt-2 flex justify-between">
+              <span>Tipo</span>
+
+              <strong>
+                {result.ticket_type === "FULL" ? "Inteira" : "Meia-entrada"}
+              </strong>
+            </div>
+          )}
         </div>
+      )}
 
-        <Badge variant={status === "Válido" ? "secondary" : "destructive"}>
-          {status}
-        </Badge>
-      </div>
+      <Button
+        className="mt-6 w-full"
+        variant={result.result === "VALID" ? "default" : "outline"}
+        onClick={onReset}
+      >
+        <RotateCcw />
+        Validar próximo ingresso
+      </Button>
+    </div>
+  );
+}
 
-      <div>
-        <p className="text-sm text-muted-foreground">Tipo</p>
+function ValidationError({
+  message,
+  onReset,
+}: {
+  message: string;
+  onReset: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center py-8 text-center">
+      <XCircle size={64} className="text-destructive" />
 
-        <p className="font-medium">{ticket.ticketType}</p>
-      </div>
+      <h2 className="mt-5 text-xl font-bold">Erro na validação</h2>
 
-      <div>
-        <p className="text-sm text-muted-foreground">Data</p>
+      <p className="mt-2 text-muted-foreground">{message}</p>
 
-        <p className="font-medium">
-          {ticket.date} às {ticket.time}
-        </p>
-      </div>
-
-      <div>
-        <p className="text-sm text-muted-foreground">Local</p>
-
-        <p className="font-medium">{ticket.location}</p>
-      </div>
-
-      <div>
-        <p className="text-sm text-muted-foreground">Código</p>
-
-        <p className="break-all font-mono text-xs">{ticket.code}</p>
-      </div>
+      <Button variant="outline" className="mt-6 w-full" onClick={onReset}>
+        <RotateCcw />
+        Tentar novamente
+      </Button>
     </div>
   );
 }
