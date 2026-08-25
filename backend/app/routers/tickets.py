@@ -23,6 +23,7 @@ from app.models import (
 )
 
 from app.schemas import (
+    SharedTicketResponse,
     TicketEventResponse,
     TicketResponse,
     TicketValidationRequest,
@@ -293,6 +294,67 @@ def validate_ticket(
 # =========================================================
 # INGRESSO INDIVIDUAL
 # =========================================================
+
+# =========================================================
+# INGRESSO COMPARTILHADO
+# =========================================================
+
+
+@router.get(
+    "/share/{code}",
+    response_model=SharedTicketResponse,
+)
+def get_shared_ticket(
+    code: str,
+    db: Session = Depends(get_db),
+):
+    ticket = db.scalar(
+        select(Ticket).where(
+            Ticket.code == code,
+        )
+    )
+
+    if ticket is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Ingresso não encontrado.",
+        )
+
+    reservation = db.get(
+        Reservation,
+        ticket.reservation_id,
+    )
+
+    if reservation is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reserva não encontrada.",
+        )
+
+    event = db.get(
+        Event,
+        reservation.event_id,
+    )
+
+    if event is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Evento não encontrado.",
+        )
+
+    return SharedTicketResponse(
+        id=ticket.id,
+        ticket_type=ticket.ticket_type,
+        status=ticket.status,
+        code=ticket.code,
+        event=TicketEventResponse(
+            id=event.id,
+            title=event.title,
+            event_date=event.event_date,
+            location=event.location,
+            image_url=event.image_url,
+        ),
+    )
 
 
 @router.get(

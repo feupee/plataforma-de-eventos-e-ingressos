@@ -1,4 +1,4 @@
-import type { Ticket, TicketValidation } from "@/types/ticket";
+import type { SharedTicket, Ticket, TicketValidation } from "@/types/ticket";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
@@ -47,6 +47,20 @@ export async function validateTicket(
     const error = await response.json().catch(() => null);
 
     throw new Error(error?.detail ?? "Não foi possível validar o ingresso.");
+  }
+
+  return response.json();
+}
+
+export async function getSharedTicket(code: string): Promise<SharedTicket> {
+  const response = await fetch(
+    `${API_URL}/tickets/share/${encodeURIComponent(code)}`,
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+
+    throw new Error(error?.detail ?? "Não foi possível carregar o ingresso.");
   }
 
   return response.json();

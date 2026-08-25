@@ -41,3 +41,14 @@ export type TicketValidation = {
 
   validated_at: string | null;
 };
+
+export type SharedTicket = {
+  id: number;
+
+  ticket_type: TicketType;
+  status: TicketStatus;
+
+  code: string;
+
+  event: TicketEvent;
+};

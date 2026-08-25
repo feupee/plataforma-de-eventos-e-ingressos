@@ -2,13 +2,24 @@
 
 import Image from "next/image";
 
-import { CalendarDays, MapPin, Ticket as TicketIcon } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  Copy,
+  MapPin,
+  Share2,
+  Ticket as TicketIcon,
+} from "lucide-react";
+
+import { useState } from "react";
 
 import { QRCodeSVG } from "qrcode.react";
 
 import type { Ticket } from "@/types/ticket";
 
 import { Badge } from "@/components/ui/badge";
+
+import { Button } from "@/components/ui/button";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -25,6 +36,34 @@ export function TicketCard({ ticket }: TicketCardProps) {
   }).format(eventDate);
 
   const ticketType = ticket.ticket_type === "FULL" ? "Inteira" : "Meia-entrada";
+
+  const [copied, setCopied] = useState(false);
+
+  async function handleShare() {
+    const shareUrl = `${window.location.origin}/ingresso/${ticket.code}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: ticket.event.title,
+          text: `Ingresso para ${ticket.event.title}`,
+          url: shareUrl,
+        });
+
+        return;
+      }
+
+      await navigator.clipboard.writeText(shareUrl);
+
+      setCopied(true);
+
+      window.setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Não foi possível compartilhar:", error);
+    }
+  }
 
   return (
     <Card className="overflow-hidden">
@@ -112,6 +151,24 @@ export function TicketCard({ ticket }: TicketCardProps) {
               {ticket.code}
             </p>
           </div>
+
+          <Button
+            variant="outline"
+            className="mt-5 w-full"
+            onClick={handleShare}
+          >
+            {copied ? (
+              <>
+                <Check />
+                Link copiado
+              </>
+            ) : (
+              <>
+                <Share2 />
+                Compartilhar ingresso
+              </>
+            )}
+          </Button>
         </div>
       </CardContent>
     </Card>

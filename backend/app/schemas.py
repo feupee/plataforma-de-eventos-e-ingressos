@@ -277,3 +277,18 @@ class TicketValidationResponse(BaseModel):
     ticket_type: TicketType | None = None
 
     validated_at: datetime | None = None
+
+# =========================================================
+# SHARED TICKET
+# =========================================================
+
+
+class SharedTicketResponse(BaseModel):
+    id: int
+
+    ticket_type: TicketType
+    status: TicketStatus
+
+    code: str
+
+    event: TicketEventResponse
