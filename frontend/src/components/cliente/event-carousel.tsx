@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import type { Event } from "@/types/event";
+
 import { Button } from "@/components/ui/button";
 
 import {
@@ -13,50 +15,15 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
-const events = [
-  {
-    id: 1,
-    title: "Festival de Música 2026",
-    category: "Música",
-    date: "12 de Setembro",
-    location: "Uberlândia - MG",
-    image: "/carousel/evento1.png",
-  },
-  {
-    id: 2,
-    title: "Tech Conference",
-    category: "Tecnologia",
-    date: "20 de Setembro",
-    location: "São Paulo - SP",
-    image: "/carousel/evento2.png",
-  },
-  {
-    id: 3,
-    title: "Festival Gastronômico",
-    category: "Gastronomia",
-    date: "28 de Setembro",
-    location: "Belo Horizonte - MG",
-    image: "/carousel/evento3.png",
-  },
-  {
-    id: 4,
-    title: "Stand-up Comedy Night",
-    category: "Comédia",
-    date: "05 de Outubro",
-    location: "Uberlândia - MG",
-    image: "/carousel/evento4.png",
-  },
-  {
-    id: 5,
-    title: "Campeonato de E-Sports",
-    category: "Games",
-    date: "18 de Outubro",
-    location: "São Paulo - SP",
-    image: "/carousel/evento5.png",
-  },
-];
+type EventCarouselProps = {
+  events: Event[];
+};
 
-export function EventCarousel() {
+export function EventCarousel({ events }: EventCarouselProps) {
+  if (events.length === 0) {
+    return null;
+  }
+
   return (
     <section className="w-full overflow-hidden py-6">
       <Carousel
@@ -72,47 +39,40 @@ export function EventCarousel() {
               key={event.id}
               className="basis-[90%] md:basis-[85%] lg:basis-[80%]"
             >
-              <div className="relative h-[300px] w-full overflow-hidden rounded-xl">
-                <Image
-                  src={event.image}
-                  alt={event.title}
-                  fill
-                  sizes="80vw"
-                  className="object-cover"
-                />
+              <div className="relative h-[300px] w-full overflow-hidden rounded-xl md:h-[400px] lg:h-[480px]">
+                {event.image_url ? (
+                  <Image
+                    src={event.image_url}
+                    alt={event.title}
+                    fill
+                    loading={index === 0 ? "eager" : "lazy"}
+                    sizes="(max-width: 640px) 90vw, (max-width: 768px) 85vw, 80vw"
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center bg-muted text-muted-foreground">
+                    Evento sem imagem
+                  </div>
+                )}
 
-                <Link
-                  href={`/cliente/eventos/${event.id}/reserva`}
-                  className="absolute inset-0 z-10"
-                  aria-label={`Comprar ingresso para ${event.title}`}
-                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
-                {/* Escurece o lado esquerdo */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent" />
+                <div className="absolute bottom-0 left-0 p-6 text-white md:p-8">
+                  <p className="text-sm font-medium">{event.category}</p>
 
-                {/* Informações do evento */}
-                <div className="absolute bottom-0 left-0 p-8 text-white md:p-12">
-                  <span className="text-sm font-medium text-white/70">
-                    {event.category}
-                  </span>
-
-                  <h2 className="mt-2 text-3xl font-bold md:text-5xl">
+                  <h2 className="mt-1 text-2xl font-bold md:text-4xl">
                     {event.title}
                   </h2>
 
-                  <div className="mt-4 flex flex-col gap-1 text-sm text-white/80 md:flex-row md:gap-4">
-                    <span>{event.date}</span>
+                  <p className="mt-2 text-sm text-white/80">{event.location}</p>
 
-                    <span className="hidden md:block">•</span>
+                  <p className="mt-1 text-sm text-white/80">
+                    A partir de R$ {Number(event.half_price).toFixed(2)}
+                  </p>
 
-                    <span>{event.location}</span>
-                  </div>
-
-                  <div className="relative z-20 mt-6">
-                    <Link href={`/cliente/reserva`}>
-                      <Button>Ver ingressos</Button>
-                    </Link>
-                  </div>
+                  <Link href={`/cliente/eventos/${event.id}/reserva`}>
+                    <Button className="mt-5">Ver ingressos</Button>
+                  </Link>
                 </div>
               </div>
             </CarouselItem>

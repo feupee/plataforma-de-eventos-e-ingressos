@@ -186,18 +186,7 @@ export function Reservation() {
                 </strong>
               </div>
             </div>
-
-            <p className="mt-4 text-sm text-muted-foreground">
-              A reserva fica disponível por aproximadamente 15 minutos enquanto
-              o pagamento não é concluído.
-            </p>
-
             <PaymentSimulation reservation={reservation} />
-
-            <p className="mt-2 text-xs text-muted-foreground">
-              O pagamento será conectado ao ambiente de testes do provedor na
-              próxima etapa.
-            </p>
           </CardContent>
         </Card>
       </div>
