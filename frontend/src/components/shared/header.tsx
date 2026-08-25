@@ -28,18 +28,19 @@ export function Header() {
 
       {/* Pesquisa */}
       <div className="flex flex-1 justify-center">
-        <div className="relative w-full max-w-md">
+        <form action="/cliente/eventos" className="relative w-full max-w-md">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
             size={18}
           />
 
           <Input
+            name="busca"
             type="search"
             placeholder="Pesquisar eventos..."
             className="pl-10"
           />
-        </div>
+        </form>
       </div>
 
       {/* Tema + Usuário */}
