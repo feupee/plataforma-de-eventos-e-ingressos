@@ -12,6 +12,10 @@ from app.routers.events import (
     router as events_router,
 )
 
+from app.routers.external_events import (
+    router as external_events_router,
+)
+
 from app.routers.payments import (
     router as payments_router,
 )
@@ -59,6 +63,10 @@ app.include_router(
 
 app.include_router(
     events_router
+)
+
+app.include_router(
+    external_events_router
 )
 
 app.include_router(

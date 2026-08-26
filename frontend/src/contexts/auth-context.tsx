@@ -2,7 +2,7 @@
 
 import {
   createContext,
-  ReactNode,
+  type ReactNode,
   useContext,
   useEffect,
   useState,
@@ -42,7 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedUser = getUser();
 
       if (!storedToken) {
+        setUser(null);
+        setToken(null);
         setLoading(false);
+
         return;
       }
 
@@ -53,11 +56,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const current = await getMe();
+        const currentUser = await getMe();
 
-        setUser(current);
+        setUser(currentUser);
 
-        saveAuth(storedToken, current);
+        saveAuth(storedToken, currentUser);
       } catch {
         logout();
 
@@ -75,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     saveAuth(newToken, newUser);
 
     setToken(newToken);
+
     setUser(newUser);
   }
 

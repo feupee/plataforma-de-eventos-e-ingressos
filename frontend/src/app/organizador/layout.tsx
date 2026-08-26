@@ -1,6 +1,10 @@
+import { RoleGuard } from "@/components/auth/role-guard";
+
 import { OrganizerSidebar } from "@/components/organizador/organizer-sidebar";
-import { UserAvatar } from "@/components/shared/avatar";
+
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+
+import { Separator } from "@/components/ui/separator";
 
 import {
   SidebarInset,
@@ -8,26 +12,32 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-export default function OrganizadorLayout({
+export default function OrganizerLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <SidebarProvider>
-      <OrganizerSidebar />
+    <RoleGuard allowedRoles={["ORGANIZER"]}>
+      <SidebarProvider>
+        <OrganizerSidebar />
 
-      <SidebarInset>
-        <header className="flex h-16 w-full items-center border-b px-6">
-          <SidebarTrigger />
-          <p className="text-sm text-muted-foreground">Painel do organizador</p>
-          <div className="ml-auto flex items-center gap-3">
-            <ThemeToggle />
-            <UserAvatar />
-          </div>
-        </header>
-        <main className="p-6">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center justify-between border-b px-4">
+            <div className="flex items-center gap-2">
+              <SidebarTrigger />
+
+              <Separator orientation="vertical" className="h-4" />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+            </div>
+          </header>
+
+          <main className="flex flex-1 flex-col gap-4 p-4">{children}</main>
+        </SidebarInset>
+      </SidebarProvider>
+    </RoleGuard>
   );
 }
