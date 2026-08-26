@@ -57,11 +57,7 @@ export function TicketValidator() {
       setLoading(true);
       setError(null);
 
-      const validation = await validateTicket(
-        code,
-        selectedEventId,
-        gateUserId,
-      );
+      const validation = await validateTicket(code, selectedEventId);
 
       setResult(validation);
     } catch (error) {

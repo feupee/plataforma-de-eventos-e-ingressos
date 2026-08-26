@@ -1,9 +1,28 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import or_, select
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    status,
+)
+
+from sqlalchemy import (
+    or_,
+    select,
+)
+
 from sqlalchemy.orm import Session
 
+from app.auth import require_role
 from app.database import get_db
-from app.models import Event, EventStatus, User, UserRole
+
+from app.models import (
+    Event,
+    EventStatus,
+    User,
+    UserRole,
+)
+
 from app.schemas import (
     EventCreate,
     EventResponse,
@@ -17,11 +36,6 @@ router = APIRouter(
 )
 
 
-# =========================================================
-# GET /events
-# =========================================================
-
-
 @router.get(
     "",
     response_model=list[EventResponse],
@@ -29,63 +43,97 @@ router = APIRouter(
 def list_events(
     search: str | None = Query(
         default=None,
-        description="Pesquisa por título, categoria ou local.",
     ),
+
     category: str | None = Query(
         default=None,
-        description="Filtra pela categoria.",
     ),
-    event_status: EventStatus | None = Query(
+
+    status_filter: EventStatus
+    | None = Query(
         default=None,
         alias="status",
-        description="Filtra pelo status do evento.",
     ),
+
     organizer_id: int | None = Query(
         default=None,
-        description="Filtra pelo organizador.",
     ),
+
     db: Session = Depends(get_db),
 ):
     query = select(Event)
 
     if search:
-        pattern = f"%{search.strip()}%"
+        pattern = f"%{search}%"
 
         query = query.where(
             or_(
-                Event.title.ilike(pattern),
-                Event.category.ilike(pattern),
-                Event.location.ilike(pattern),
+                Event.title.ilike(
+                    pattern,
+                ),
+
+                Event.category.ilike(
+                    pattern,
+                ),
+
+                Event.location.ilike(
+                    pattern,
+                ),
             )
         )
 
     if category:
         query = query.where(
-            Event.category.ilike(category.strip())
+            Event.category == category,
         )
 
-    if event_status:
+    if status_filter:
         query = query.where(
-            Event.status == event_status
+            Event.status
+            == status_filter,
         )
 
     if organizer_id is not None:
         query = query.where(
-            Event.organizer_id == organizer_id
+            Event.organizer_id
+            == organizer_id,
         )
 
     query = query.order_by(
-        Event.event_date.asc()
+        Event.event_date.asc(),
     )
 
-    events = db.scalars(query).all()
+    return list(
+        db.scalars(query).all()
+    )
+
+
+# IMPORTANTE: precisa ficar antes de /{event_id}
+@router.get(
+    "/mine",
+    response_model=list[EventResponse],
+)
+def list_my_events(
+    db: Session = Depends(get_db),
+
+    organizer: User = Depends(
+        require_role(
+            UserRole.ORGANIZER,
+        )
+    ),
+):
+    events = db.scalars(
+        select(Event)
+        .where(
+            Event.organizer_id
+            == organizer.id,
+        )
+        .order_by(
+            Event.event_date.asc(),
+        )
+    ).all()
 
     return list(events)
-
-
-# =========================================================
-# GET /events/{event_id}
-# =========================================================
 
 
 @router.get(
@@ -94,9 +142,13 @@ def list_events(
 )
 def get_event(
     event_id: int,
+
     db: Session = Depends(get_db),
 ):
-    event = db.get(Event, event_id)
+    event = db.get(
+        Event,
+        event_id,
+    )
 
     if event is None:
         raise HTTPException(
@@ -105,11 +157,6 @@ def get_event(
         )
 
     return event
-
-
-# =========================================================
-# POST /events
-# =========================================================
 
 
 @router.post(
@@ -119,50 +166,27 @@ def get_event(
 )
 def create_event(
     payload: EventCreate,
+
     db: Session = Depends(get_db),
+
+    organizer: User = Depends(
+        require_role(
+            UserRole.ORGANIZER,
+        )
+    ),
 ):
-    organizer = db.get(
-        User,
-        payload.organizer_id,
-    )
-
-    if organizer is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Organizador não encontrado.",
-        )
-
-    if organizer.role != UserRole.ORGANIZER:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="O usuário informado não possui perfil de organizador.",
-        )
-
     event = Event(
-        organizer_id=payload.organizer_id,
-        title=payload.title,
-        description=payload.description,
-        category=payload.category,
-        event_date=payload.event_date,
-        location=payload.location,
-        full_price=payload.full_price,
-        half_price=payload.half_price,
-        capacity=payload.capacity,
-        image_url=payload.image_url,
-        age_rating=payload.age_rating,
-        status=payload.status,
+        **payload.model_dump(),
+
+        organizer_id=organizer.id,
     )
 
     db.add(event)
+
     db.commit()
     db.refresh(event)
 
     return event
-
-
-# =========================================================
-# PUT /events/{event_id}
-# =========================================================
 
 
 @router.put(
@@ -171,10 +195,21 @@ def create_event(
 )
 def update_event(
     event_id: int,
+
     payload: EventUpdate,
+
     db: Session = Depends(get_db),
+
+    organizer: User = Depends(
+        require_role(
+            UserRole.ORGANIZER,
+        )
+    ),
 ):
-    event = db.get(Event, event_id)
+    event = db.get(
+        Event,
+        event_id,
+    )
 
     if event is None:
         raise HTTPException(
@@ -182,11 +217,23 @@ def update_event(
             detail="Evento não encontrado.",
         )
 
-    update_data = payload.model_dump(
+    if (
+        event.organizer_id
+        != organizer.id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Você não pode alterar "
+                "eventos de outro organizador."
+            ),
+        )
+
+    data = payload.model_dump(
         exclude_unset=True,
     )
 
-    for field, value in update_data.items():
+    for field, value in data.items():
         setattr(
             event,
             field,
@@ -199,20 +246,25 @@ def update_event(
     return event
 
 
-# =========================================================
-# DELETE /events/{event_id}
-# =========================================================
-
-
 @router.delete(
     "/{event_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_event(
     event_id: int,
+
     db: Session = Depends(get_db),
+
+    organizer: User = Depends(
+        require_role(
+            UserRole.ORGANIZER,
+        )
+    ),
 ):
-    event = db.get(Event, event_id)
+    event = db.get(
+        Event,
+        event_id,
+    )
 
     if event is None:
         raise HTTPException(
@@ -220,7 +272,17 @@ def delete_event(
             detail="Evento não encontrado.",
         )
 
+    if (
+        event.organizer_id
+        != organizer.id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Você não pode excluir "
+                "eventos de outro organizador."
+            ),
+        )
+
     db.delete(event)
     db.commit()
-
-    return None

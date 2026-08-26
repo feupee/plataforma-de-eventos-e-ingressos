@@ -1,4 +1,8 @@
-from datetime import datetime, timedelta, timezone
+from datetime import (
+    datetime,
+    timedelta,
+    timezone,
+)
 
 from fastapi import (
     APIRouter,
@@ -6,15 +10,19 @@ from fastapi import (
     HTTPException,
     status,
 )
+
 from sqlalchemy import (
     and_,
     func,
     or_,
     select,
 )
+
 from sqlalchemy.orm import Session
 
+from app.auth import require_role
 from app.database import get_db
+
 from app.models import (
     Event,
     EventStatus,
@@ -23,6 +31,7 @@ from app.models import (
     User,
     UserRole,
 )
+
 from app.schemas import (
     EventAvailabilityResponse,
     ReservationCreate,
@@ -46,7 +55,9 @@ def get_active_reserved_quantity(
     cutoff = (
         datetime.now(timezone.utc)
         - timedelta(
-            minutes=RESERVATION_HOLD_MINUTES,
+            minutes=(
+                RESERVATION_HOLD_MINUTES
+            ),
         )
     )
 
@@ -55,12 +66,15 @@ def get_active_reserved_quantity(
             func.coalesce(
                 func.sum(
                     Reservation.full_quantity
-                    + Reservation.half_quantity
+                    + Reservation.half_quantity,
                 ),
                 0,
             )
-        ).where(
-            Reservation.event_id == event_id,
+        )
+        .where(
+            Reservation.event_id
+            == event_id,
+
             or_(
                 Reservation.status
                 == ReservationStatus.APPROVED,
@@ -79,17 +93,13 @@ def get_active_reserved_quantity(
     return int(quantity or 0)
 
 
-# =========================================================
-# DISPONIBILIDADE
-# =========================================================
-
-
 @router.get(
     "/events/{event_id}/availability",
     response_model=EventAvailabilityResponse,
 )
 def get_event_availability(
     event_id: int,
+
     db: Session = Depends(get_db),
 ):
     event = db.get(
@@ -103,27 +113,26 @@ def get_event_availability(
             detail="Evento não encontrado.",
         )
 
-    reserved = get_active_reserved_quantity(
-        db,
-        event_id,
-    )
-
-    available = max(
-        event.capacity - reserved,
-        0,
+    reserved = (
+        get_active_reserved_quantity(
+            db,
+            event_id,
+        )
     )
 
     return EventAvailabilityResponse(
         event_id=event.id,
+
         capacity=event.capacity,
+
         reserved=reserved,
-        available=available,
+
+        available=max(
+            event.capacity
+            - reserved,
+            0,
+        ),
     )
-
-
-# =========================================================
-# CRIAR RESERVA
-# =========================================================
 
 
 @router.post(
@@ -133,7 +142,14 @@ def get_event_availability(
 )
 def create_reservation(
     payload: ReservationCreate,
+
     db: Session = Depends(get_db),
+
+    client: User = Depends(
+        require_role(
+            UserRole.CLIENT,
+        )
+    ),
 ):
     requested_quantity = (
         payload.full_quantity
@@ -144,41 +160,16 @@ def create_reservation(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
-                "Selecione pelo menos um ingresso."
+                "Selecione pelo menos "
+                "um ingresso."
             ),
         )
-
-    user = db.get(
-        User,
-        payload.user_id,
-    )
-
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Cliente não encontrado.",
-        )
-
-    if user.role != UserRole.CLIENT:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "O usuário informado não possui "
-                "perfil de cliente."
-            ),
-        )
-
-    # -----------------------------------------------------
-    # LOCK
-    #
-    # Duas reservas do mesmo evento não podem verificar
-    # a capacidade simultaneamente.
-    # -----------------------------------------------------
 
     event = db.scalar(
         select(Event)
         .where(
-            Event.id == payload.event_id,
+            Event.id
+            == payload.event_id,
         )
         .with_for_update()
     )
@@ -189,30 +180,39 @@ def create_reservation(
             detail="Evento não encontrado.",
         )
 
-    if event.status != EventStatus.PUBLISHED:
+    if (
+        event.status
+        != EventStatus.PUBLISHED
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
-                "Este evento não está disponível "
-                "para reservas."
+                "Este evento não está "
+                "disponível para reservas."
             ),
         )
 
-    reserved = get_active_reserved_quantity(
-        db,
-        event.id,
+    reserved = (
+        get_active_reserved_quantity(
+            db,
+            event.id,
+        )
     )
 
     available = (
-        event.capacity - reserved
+        event.capacity
+        - reserved
     )
 
-    if requested_quantity > available:
+    if (
+        requested_quantity
+        > available
+    ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
-                f"Apenas {available} ingresso(s) "
-                "estão disponíveis."
+                f"Apenas {available} "
+                "ingresso(s) estão disponíveis."
             ),
         )
 
@@ -224,7 +224,8 @@ def create_reservation(
     )
 
     reservation = Reservation(
-        user_id=payload.user_id,
+        user_id=client.id,
+
         event_id=event.id,
 
         full_quantity=(
@@ -242,20 +243,10 @@ def create_reservation(
 
     db.add(reservation)
 
-    try:
-        db.commit()
-        db.refresh(reservation)
-
-    except Exception:
-        db.rollback()
-        raise
+    db.commit()
+    db.refresh(reservation)
 
     return reservation
-
-
-# =========================================================
-# CONSULTAR RESERVA
-# =========================================================
 
 
 @router.get(
@@ -264,7 +255,14 @@ def create_reservation(
 )
 def get_reservation(
     reservation_id: int,
+
     db: Session = Depends(get_db),
+
+    client: User = Depends(
+        require_role(
+            UserRole.CLIENT,
+        )
+    ),
 ):
     reservation = db.get(
         Reservation,
@@ -275,6 +273,18 @@ def get_reservation(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Reserva não encontrada.",
+        )
+
+    if (
+        reservation.user_id
+        != client.id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Esta reserva não pertence "
+                "ao usuário autenticado."
+            ),
         )
 
     return reservation

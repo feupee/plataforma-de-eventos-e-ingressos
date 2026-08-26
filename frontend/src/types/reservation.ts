@@ -18,7 +18,6 @@ export type Reservation = {
 };
 
 export type CreateReservationPayload = {
-  user_id: number;
   event_id: number;
 
   full_quantity: number;

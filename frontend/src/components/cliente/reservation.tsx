@@ -122,9 +122,6 @@ export function Reservation() {
       setError(null);
 
       const created = await createReservation({
-        // Temporário até JWT.
-        user_id: 2,
-
         event_id: eventId,
 
         full_quantity: fullQuantity,

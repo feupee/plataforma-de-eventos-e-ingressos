@@ -1,5 +1,5 @@
 import { OrganizerSidebar } from "@/components/organizador/organizer-sidebar";
-import AvatarComponent from "@/components/shared/avatar";
+import { UserAvatar } from "@/components/shared/avatar";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 
 import {
@@ -23,7 +23,7 @@ export default function OrganizadorLayout({
           <p className="text-sm text-muted-foreground">Painel do organizador</p>
           <div className="ml-auto flex items-center gap-3">
             <ThemeToggle />
-            <AvatarComponent />
+            <UserAvatar />
           </div>
         </header>
         <main className="p-6">{children}</main>

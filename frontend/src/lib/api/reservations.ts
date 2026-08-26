@@ -4,12 +4,14 @@ import type {
   Reservation,
 } from "@/types/reservation";
 
+import { apiFetch } from "@/lib/api/api-fetch";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 export async function createReservation(
   payload: CreateReservationPayload,
 ): Promise<Reservation> {
-  const response = await fetch(`${API_URL}/reservations`, {
+  const response = await apiFetch(`${API_URL}/reservations`, {
     method: "POST",
 
     headers: {
@@ -31,10 +33,12 @@ export async function createReservation(
 export async function getReservation(
   reservationId: number,
 ): Promise<Reservation> {
-  const response = await fetch(`${API_URL}/reservations/${reservationId}`);
+  const response = await apiFetch(`${API_URL}/reservations/${reservationId}`);
 
   if (!response.ok) {
-    throw new Error("Não foi possível carregar a reserva.");
+    const error = await response.json().catch(() => null);
+
+    throw new Error(error?.detail ?? "Não foi possível carregar a reserva.");
   }
 
   return response.json();

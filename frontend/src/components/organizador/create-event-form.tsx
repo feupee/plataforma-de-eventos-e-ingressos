@@ -53,23 +53,21 @@ export function CreateEventForm() {
       setError(null);
 
       await createEvent({
-        // Temporário até implementarmos autenticação.
-        organizer_id: 1,
-
         title,
         description,
         category,
 
-        event_date: new Date(eventDate).toISOString(),
+        event_date: eventDate,
 
         location,
 
         full_price: Number(fullPrice),
+
         half_price: Number(halfPrice),
 
         capacity: Number(capacity),
 
-        image_url: imageUrl.trim() || null,
+        image_url: imageUrl.trim() ? imageUrl.trim() : null,
 
         age_rating: ageRating,
 

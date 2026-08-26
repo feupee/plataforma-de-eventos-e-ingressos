@@ -1,7 +1,12 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+)
 
 from app.models import (
     EventStatus,
@@ -9,9 +14,8 @@ from app.models import (
     ReservationStatus,
     TicketStatus,
     TicketType,
+    UserRole,
 )
-
-from typing import Literal
 
 
 # =========================================================
@@ -20,128 +24,59 @@ from typing import Literal
 
 
 class EventBase(BaseModel):
-    title: str = Field(
-        min_length=3,
-        max_length=200,
-    )
-
-    description: str = Field(
-        min_length=3,
-    )
-
-    category: str = Field(
-        min_length=2,
-        max_length=100,
-    )
+    title: str
+    description: str
+    category: str
 
     event_date: datetime
+    location: str
 
-    location: str = Field(
-        min_length=2,
-        max_length=255,
-    )
+    full_price: Decimal
+    half_price: Decimal
 
-    full_price: Decimal = Field(
-        ge=0,
-        max_digits=10,
-        decimal_places=2,
-    )
+    capacity: int
 
-    half_price: Decimal = Field(
-        ge=0,
-        max_digits=10,
-        decimal_places=2,
-    )
+    image_url: str | None = None
 
-    capacity: int = Field(
-        gt=0,
-    )
-
-    image_url: str | None = Field(
-        default=None,
-        max_length=500,
-    )
-
-    age_rating: str = Field(
-        default="Livre",
-        max_length=20,
-    )
+    age_rating: str
 
 
 class EventCreate(EventBase):
-    # Temporário.
-    # Depois da autenticação, o organizer_id virá
-    # automaticamente do usuário logado.
-    organizer_id: int
-
     status: EventStatus = EventStatus.DRAFT
 
 
 class EventUpdate(BaseModel):
-    title: str | None = Field(
-        default=None,
-        min_length=3,
-        max_length=200,
-    )
-
-    description: str | None = Field(
-        default=None,
-        min_length=3,
-    )
-
-    category: str | None = Field(
-        default=None,
-        min_length=2,
-        max_length=100,
-    )
+    title: str | None = None
+    description: str | None = None
+    category: str | None = None
 
     event_date: datetime | None = None
+    location: str | None = None
 
-    location: str | None = Field(
-        default=None,
-        min_length=2,
-        max_length=255,
-    )
+    full_price: Decimal | None = None
+    half_price: Decimal | None = None
 
-    full_price: Decimal | None = Field(
-        default=None,
-        ge=0,
-        max_digits=10,
-        decimal_places=2,
-    )
+    capacity: int | None = None
 
-    half_price: Decimal | None = Field(
-        default=None,
-        ge=0,
-        max_digits=10,
-        decimal_places=2,
-    )
+    image_url: str | None = None
 
-    capacity: int | None = Field(
-        default=None,
-        gt=0,
-    )
-
-    image_url: str | None = Field(
-        default=None,
-        max_length=500,
-    )
-
-    age_rating: str | None = Field(
-        default=None,
-        max_length=20,
-    )
+    age_rating: str | None = None
 
     status: EventStatus | None = None
 
 
 class EventResponse(EventBase):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
     id: int
     organizer_id: int
+
     status: EventStatus
+
     created_at: datetime
+
 
 # =========================================================
 # RESERVATION
@@ -149,9 +84,6 @@ class EventResponse(EventBase):
 
 
 class ReservationCreate(BaseModel):
-    # Temporário até a autenticação.
-    user_id: int
-
     event_id: int
 
     full_quantity: int = Field(
@@ -192,6 +124,7 @@ class EventAvailabilityResponse(BaseModel):
     reserved: int
     available: int
 
+
 # =========================================================
 # PAYMENT
 # =========================================================
@@ -217,6 +150,7 @@ class PaymentSimulationResponse(BaseModel):
 
     message: str
 
+
 # =========================================================
 # TICKET
 # =========================================================
@@ -225,8 +159,10 @@ class PaymentSimulationResponse(BaseModel):
 class TicketEventResponse(BaseModel):
     id: int
     title: str
+
     event_date: datetime
     location: str
+
     image_url: str | None
 
 
@@ -235,6 +171,7 @@ class TicketResponse(BaseModel):
     reservation_id: int
 
     ticket_type: TicketType
+
     price: Decimal
 
     code: str
@@ -244,10 +181,6 @@ class TicketResponse(BaseModel):
 
     event: TicketEventResponse
 
-# =========================================================
-# TICKET VALIDATION
-# =========================================================
-
 
 class TicketValidationRequest(BaseModel):
     code: str = Field(
@@ -255,9 +188,6 @@ class TicketValidationRequest(BaseModel):
     )
 
     event_id: int
-
-    # Temporário até JWT.
-    gate_user_id: int
 
 
 class TicketValidationResponse(BaseModel):
@@ -278,10 +208,6 @@ class TicketValidationResponse(BaseModel):
 
     validated_at: datetime | None = None
 
-# =========================================================
-# SHARED TICKET
-# =========================================================
-
 
 class SharedTicketResponse(BaseModel):
     id: int
@@ -292,3 +218,47 @@ class SharedTicketResponse(BaseModel):
     code: str
 
     event: TicketEventResponse
+
+
+# =========================================================
+# AUTH
+# =========================================================
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class RegisterRequest(BaseModel):
+    name: str = Field(
+        min_length=2,
+        max_length=120,
+    )
+
+    email: str = Field(
+        min_length=5,
+        max_length=255,
+    )
+
+    password: str = Field(
+        min_length=6,
+        max_length=128,
+    )
+
+
+class AuthUserResponse(BaseModel):
+    id: int
+
+    name: str
+    email: str
+
+    role: UserRole
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+
+    token_type: str = "bearer"
+
+    user: AuthUserResponse

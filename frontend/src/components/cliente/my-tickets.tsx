@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import { TicketIcon } from "lucide-react";
 
-import { getUserTickets } from "@/lib/api/tickets";
+import { getMyTickets } from "@/lib/api/tickets";
 
 import type { Ticket } from "@/types/ticket";
 
@@ -27,10 +27,7 @@ export function MyTickets() {
         setLoading(true);
         setError(null);
 
-        const data = await getUserTickets(
-          // Temporário até JWT.
-          2,
-        );
+        const data = await getMyTickets();
 
         setTickets(data);
       } catch (error) {

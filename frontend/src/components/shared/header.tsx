@@ -7,7 +7,7 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 import { ThemeToggle } from "./theme-toggle";
-import AvatarComponent from "../shared/avatar";
+import { UserAvatar } from "@/components/shared/avatar";
 
 export function Header() {
   return (
@@ -47,7 +47,7 @@ export function Header() {
       <div className="flex flex-1 items-center justify-end gap-3">
         <ThemeToggle />
 
-        <AvatarComponent />
+        <UserAvatar />
       </div>
     </header>
   );

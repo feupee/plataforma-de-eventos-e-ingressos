@@ -5,37 +5,41 @@ import type {
   UpdateEventPayload,
 } from "@/types/event";
 
+import { apiFetch } from "@/lib/api/api-fetch";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 type GetEventsParams = {
   search?: string;
   category?: string;
+
   status?: EventStatus;
+
   organizerId?: number;
 };
 
 export async function getEvents(
   params: GetEventsParams = {},
 ): Promise<Event[]> {
-  const queryParams = new URLSearchParams();
+  const searchParams = new URLSearchParams();
 
   if (params.search) {
-    queryParams.set("search", params.search);
+    searchParams.set("search", params.search);
   }
 
   if (params.category) {
-    queryParams.set("category", params.category);
+    searchParams.set("category", params.category);
   }
 
   if (params.status) {
-    queryParams.set("status", params.status);
+    searchParams.set("status", params.status);
   }
 
   if (params.organizerId !== undefined) {
-    queryParams.set("organizer_id", String(params.organizerId));
+    searchParams.set("organizer_id", String(params.organizerId));
   }
 
-  const query = queryParams.toString();
+  const query = searchParams.toString();
 
   const response = await fetch(`${API_URL}/events${query ? `?${query}` : ""}`);
 
@@ -56,8 +60,20 @@ export async function getEvent(eventId: number): Promise<Event> {
   return response.json();
 }
 
+export async function getMyEvents(): Promise<Event[]> {
+  const response = await apiFetch(`${API_URL}/events/mine`);
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+
+    throw new Error(error?.detail ?? "Não foi possível carregar seus eventos.");
+  }
+
+  return response.json();
+}
+
 export async function createEvent(payload: CreateEventPayload): Promise<Event> {
-  const response = await fetch(`${API_URL}/events`, {
+  const response = await apiFetch(`${API_URL}/events`, {
     method: "POST",
 
     headers: {
@@ -70,9 +86,7 @@ export async function createEvent(payload: CreateEventPayload): Promise<Event> {
   if (!response.ok) {
     const error = await response.json().catch(() => null);
 
-    throw new Error(
-      error?.detail ?? `Erro ao criar evento: ${response.status}`,
-    );
+    throw new Error(error?.detail ?? "Não foi possível criar o evento.");
   }
 
   return response.json();
@@ -82,7 +96,7 @@ export async function updateEvent(
   eventId: number,
   payload: UpdateEventPayload,
 ): Promise<Event> {
-  const response = await fetch(`${API_URL}/events/${eventId}`, {
+  const response = await apiFetch(`${API_URL}/events/${eventId}`, {
     method: "PUT",
 
     headers: {
@@ -95,20 +109,20 @@ export async function updateEvent(
   if (!response.ok) {
     const error = await response.json().catch(() => null);
 
-    throw new Error(
-      error?.detail ?? `Erro ao atualizar evento: ${response.status}`,
-    );
+    throw new Error(error?.detail ?? "Não foi possível atualizar o evento.");
   }
 
   return response.json();
 }
 
 export async function deleteEvent(eventId: number): Promise<void> {
-  const response = await fetch(`${API_URL}/events/${eventId}`, {
+  const response = await apiFetch(`${API_URL}/events/${eventId}`, {
     method: "DELETE",
   });
 
   if (!response.ok) {
-    throw new Error(`Erro ao excluir evento: ${response.status}`);
+    const error = await response.json().catch(() => null);
+
+    throw new Error(error?.detail ?? "Não foi possível excluir o evento.");
   }
 }

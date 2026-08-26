@@ -13,7 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { deleteEvent, getEvents, updateEvent } from "@/lib/api/events";
+import { deleteEvent, getMyEvents, updateEvent } from "@/lib/api/events";
 
 import type { Event, EventStatus } from "@/types/event";
 
@@ -35,10 +35,7 @@ export function OrganizerEvents() {
       setLoading(true);
       setError(null);
 
-      const data = await getEvents({
-        // Temporário até autenticação.
-        organizerId: 1,
-      });
+      const data = await getMyEvents();
 
       setEvents(data);
     } catch (error) {
