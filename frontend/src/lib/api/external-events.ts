@@ -7,6 +7,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 type ExternalEventParams = {
   keyword?: string;
 
+  city?: string;
+
   countryCode?: string;
 
   size?: number;
@@ -53,6 +55,10 @@ export async function getExternalEvents(
 
   if (params.keyword) {
     searchParams.set("keyword", params.keyword);
+  }
+
+  if (params.city) {
+    searchParams.set("city", params.city);
   }
 
   if (params.countryCode) {
