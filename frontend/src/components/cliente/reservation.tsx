@@ -23,11 +23,11 @@ import type {
   Reservation as ReservationType,
 } from "@/types/reservation";
 
+import { PaymentSimulation } from "@/components/cliente/payment-simulation";
+
 import { Button } from "@/components/ui/button";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-import { PaymentSimulation } from "@/components/cliente/payment-simulation";
 
 export function Reservation() {
   const params = useParams<{
@@ -58,10 +58,12 @@ export function Reservation() {
     async function load() {
       try {
         setLoading(true);
+
         setError(null);
 
         const [eventData, availabilityData] = await Promise.all([
           getEvent(eventId),
+
           getEventAvailability(eventId),
         ]);
 
@@ -119,9 +121,11 @@ export function Reservation() {
 
     try {
       setSubmitting(true);
+
       setError(null);
 
       const created = await createReservation({
+        // NÃO EXISTE MAIS user_id
         event_id: eventId,
 
         full_quantity: fullQuantity,
@@ -131,9 +135,9 @@ export function Reservation() {
 
       setReservation(created);
 
-      const updatedAvailability = await getEventAvailability(eventId);
+      const updated = await getEventAvailability(eventId);
 
-      setAvailability(updatedAvailability);
+      setAvailability(updated);
     } catch (error) {
       console.error(error);
 
@@ -157,7 +161,7 @@ export function Reservation() {
             <h1 className="mt-5 text-2xl font-bold">Reserva realizada</h1>
 
             <p className="mt-2 text-muted-foreground">
-              Seus ingressos foram reservados temporariamente.
+              A reserva foi vinculada à sua conta.
             </p>
 
             <div className="mt-6 w-full rounded-xl bg-muted p-5 text-left">
@@ -183,7 +187,10 @@ export function Reservation() {
                 </strong>
               </div>
             </div>
-            <PaymentSimulation reservation={reservation} />
+
+            <div className="w-full">
+              <PaymentSimulation reservation={reservation} />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -192,7 +199,6 @@ export function Reservation() {
 
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-8 p-6 lg:grid-cols-[1.3fr_1fr]">
-      {/* Evento */}
       <div>
         <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted">
           {event.image_url ? (
@@ -222,6 +228,7 @@ export function Reservation() {
               <span>
                 {new Intl.DateTimeFormat("pt-BR", {
                   dateStyle: "long",
+
                   timeStyle: "short",
                 }).format(new Date(event.event_date))}
               </span>
@@ -236,7 +243,6 @@ export function Reservation() {
         </div>
       </div>
 
-      {/* Ingressos */}
       <Card className="h-fit">
         <CardHeader>
           <CardTitle>Escolha seus ingressos</CardTitle>
@@ -249,7 +255,6 @@ export function Reservation() {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Inteira */}
           <TicketQuantity
             title="Inteira"
             price={fullPrice}
@@ -261,7 +266,6 @@ export function Reservation() {
             onIncrease={() => setFullQuantity((value) => value + 1)}
           />
 
-          {/* Meia */}
           <TicketQuantity
             title="Meia-entrada"
             price={halfPrice}
@@ -316,6 +320,7 @@ type TicketQuantityProps = {
   disabled: boolean;
 
   onDecrease: () => void;
+
   onIncrease: () => void;
 };
 

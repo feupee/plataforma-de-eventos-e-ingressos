@@ -25,6 +25,7 @@ export function MyTickets() {
     async function loadTickets() {
       try {
         setLoading(true);
+
         setError(null);
 
         const data = await getMyTickets();
@@ -62,6 +63,12 @@ export function MyTickets() {
         </h2>
 
         <p className="mt-2 text-muted-foreground">{error}</p>
+
+        <Link href="/login">
+          <Button variant="outline" className="mt-6">
+            Fazer login
+          </Button>
+        </Link>
       </div>
     );
   }
@@ -76,7 +83,7 @@ export function MyTickets() {
         </h2>
 
         <p className="mt-2 text-muted-foreground">
-          Quando uma compra for aprovada, seus ingressos aparecerão aqui.
+          Os ingressos comprados nesta conta aparecerão aqui.
         </p>
 
         <Link href="/cliente/eventos">

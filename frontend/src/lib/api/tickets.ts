@@ -1,9 +1,11 @@
 import type { SharedTicket, Ticket, TicketValidation } from "@/types/ticket";
 
+import { apiFetch } from "@/lib/api/api-fetch";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 export async function getMyTickets(): Promise<Ticket[]> {
-  const response = await fetch(`${API_URL}/tickets/me`);
+  const response = await apiFetch(`${API_URL}/tickets/me`);
 
   if (!response.ok) {
     const error = await response.json().catch(() => null);
@@ -15,7 +17,7 @@ export async function getMyTickets(): Promise<Ticket[]> {
 }
 
 export async function getTicket(ticketId: number): Promise<Ticket> {
-  const response = await fetch(`${API_URL}/tickets/${ticketId}`);
+  const response = await apiFetch(`${API_URL}/tickets/${ticketId}`);
 
   if (!response.ok) {
     const error = await response.json().catch(() => null);
@@ -28,9 +30,10 @@ export async function getTicket(ticketId: number): Promise<Ticket> {
 
 export async function validateTicket(
   code: string,
+
   eventId: number,
 ): Promise<TicketValidation> {
-  const response = await fetch(`${API_URL}/tickets/validate`, {
+  const response = await apiFetch(`${API_URL}/tickets/validate`, {
     method: "POST",
 
     headers: {

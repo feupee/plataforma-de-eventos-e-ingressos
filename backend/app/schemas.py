@@ -19,7 +19,7 @@ from app.models import (
 
 
 # =========================================================
-# EVENT
+# EVENTOS
 # =========================================================
 
 
@@ -79,7 +79,7 @@ class EventResponse(EventBase):
 
 
 # =========================================================
-# RESERVATION
+# RESERVAS
 # =========================================================
 
 
@@ -126,7 +126,7 @@ class EventAvailabilityResponse(BaseModel):
 
 
 # =========================================================
-# PAYMENT
+# PAGAMENTO
 # =========================================================
 
 
@@ -152,15 +152,17 @@ class PaymentSimulationResponse(BaseModel):
 
 
 # =========================================================
-# TICKET
+# INGRESSOS
 # =========================================================
 
 
 class TicketEventResponse(BaseModel):
     id: int
+
     title: str
 
     event_date: datetime
+
     location: str
 
     image_url: str | None
@@ -168,6 +170,7 @@ class TicketEventResponse(BaseModel):
 
 class TicketResponse(BaseModel):
     id: int
+
     reservation_id: int
 
     ticket_type: TicketType
@@ -175,6 +178,7 @@ class TicketResponse(BaseModel):
     price: Decimal
 
     code: str
+
     status: TicketStatus
 
     validated_at: datetime | None
@@ -202,6 +206,7 @@ class TicketValidationResponse(BaseModel):
     message: str
 
     ticket_id: int | None = None
+
     event_id: int | None = None
 
     ticket_type: TicketType | None = None
@@ -213,6 +218,7 @@ class SharedTicketResponse(BaseModel):
     id: int
 
     ticket_type: TicketType
+
     status: TicketStatus
 
     code: str
@@ -221,12 +227,13 @@ class SharedTicketResponse(BaseModel):
 
 
 # =========================================================
-# AUTH
+# AUTENTICAÇÃO
 # =========================================================
 
 
 class LoginRequest(BaseModel):
     email: str
+
     password: str
 
 
@@ -251,6 +258,7 @@ class AuthUserResponse(BaseModel):
     id: int
 
     name: str
+
     email: str
 
     role: UserRole

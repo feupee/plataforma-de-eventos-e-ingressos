@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 from fastapi import (
@@ -11,6 +10,7 @@ from fastapi import (
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.auth import require_role
 from app.database import get_db
 
 from app.models import (
@@ -22,6 +22,8 @@ from app.models import (
     Ticket,
     TicketStatus,
     TicketType,
+    User,
+    UserRole,
 )
 
 from app.schemas import (
@@ -36,18 +38,21 @@ router = APIRouter(
 )
 
 
-RESERVATION_HOLD_MINUTES = 15
-
-
 @router.post(
     "/simulate",
     response_model=PaymentSimulationResponse,
 )
 def simulate_payment(
     payload: PaymentSimulationRequest,
+
     db: Session = Depends(get_db),
+
+    client: User = Depends(
+        require_role(
+            UserRole.CLIENT,
+        )
+    ),
 ):
-    # Bloqueia a reserva durante o processamento.
     reservation = db.scalar(
         select(Reservation)
         .where(
@@ -63,12 +68,15 @@ def simulate_payment(
             detail="Reserva não encontrada.",
         )
 
-    # -----------------------------------------------------
-    # IDEMPOTÊNCIA
-    #
-    # Se a reserva já estiver aprovada, não devemos gerar
-    # ingressos novamente.
-    # -----------------------------------------------------
+    # O cliente só pode pagar a própria reserva.
+    if reservation.user_id != client.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Esta reserva não pertence "
+                "ao usuário autenticado."
+            ),
+        )
 
     if (
         reservation.status
@@ -84,7 +92,7 @@ def simulate_payment(
                 == PaymentStatus.APPROVED,
             )
             .order_by(
-                Payment.id.desc()
+                Payment.id.desc(),
             )
         )
 
@@ -104,23 +112,22 @@ def simulate_payment(
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=(
-                    "Reserva aprovada sem pagamento "
-                    "associado."
+                    "Reserva aprovada sem "
+                    "pagamento associado."
                 ),
             )
 
         return PaymentSimulationResponse(
             payment_id=approved_payment.id,
+
             reservation_id=reservation.id,
-            payment_status=(
-                approved_payment.status
-            ),
-            reservation_status=(
-                reservation.status
-            ),
-            ticket_count=int(
-                ticket_count
-            ),
+
+            payment_status=approved_payment.status,
+
+            reservation_status=reservation.status,
+
+            ticket_count=int(ticket_count),
+
             message=(
                 "Esta reserva já possui "
                 "pagamento aprovado."
@@ -134,34 +141,8 @@ def simulate_payment(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
-                "Esta reserva não está disponível "
-                "para pagamento."
-            ),
-        )
-
-    # -----------------------------------------------------
-    # EXPIRAÇÃO
-    # -----------------------------------------------------
-
-    expiration_limit = (
-        datetime.now(timezone.utc)
-        - timedelta(
-            minutes=RESERVATION_HOLD_MINUTES
-        )
-    )
-
-    if reservation.created_at < expiration_limit:
-        reservation.status = (
-            ReservationStatus.EXPIRED
-        )
-
-        db.commit()
-
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                "A reserva expirou. "
-                "Realize uma nova reserva."
+                "Esta reserva não está "
+                "disponível para pagamento."
             ),
         )
 
@@ -175,10 +156,6 @@ def simulate_payment(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Evento não encontrado.",
         )
-
-    # -----------------------------------------------------
-    # REGISTRAR TENTATIVA DE PAGAMENTO
-    # -----------------------------------------------------
 
     payment = Payment(
         reservation_id=reservation.id,
@@ -208,19 +185,20 @@ def simulate_payment(
             PaymentStatus.REJECTED
         )
 
-        # Reserva continua PENDING para permitir
-        # uma nova tentativa.
         db.commit()
         db.refresh(payment)
 
         return PaymentSimulationResponse(
             payment_id=payment.id,
+
             reservation_id=reservation.id,
+
             payment_status=payment.status,
-            reservation_status=(
-                reservation.status
-            ),
+
+            reservation_status=reservation.status,
+
             ticket_count=0,
+
             message="Pagamento recusado.",
         )
 
@@ -236,10 +214,6 @@ def simulate_payment(
         ReservationStatus.APPROVED
     )
 
-    # -----------------------------------------------------
-    # NÃO GERAR INGRESSOS DUAS VEZES
-    # -----------------------------------------------------
-
     existing_ticket_count = (
         db.scalar(
             select(
@@ -253,55 +227,35 @@ def simulate_payment(
     )
 
     if existing_ticket_count == 0:
-        # -------------------------------------------------
-        # INGRESSOS INTEIROS
-        # -------------------------------------------------
-
         for _ in range(
             reservation.full_quantity
         ):
-            ticket = Ticket(
-                reservation_id=(
-                    reservation.id
-                ),
+            db.add(
+                Ticket(
+                    reservation_id=reservation.id,
 
-                ticket_type=(
-                    TicketType.FULL
-                ),
+                    ticket_type=TicketType.FULL,
 
-                price=event.full_price,
+                    price=event.full_price,
 
-                status=(
-                    TicketStatus.VALID
-                ),
+                    status=TicketStatus.VALID,
+                )
             )
-
-            db.add(ticket)
-
-        # -------------------------------------------------
-        # MEIA-ENTRADA
-        # -------------------------------------------------
 
         for _ in range(
             reservation.half_quantity
         ):
-            ticket = Ticket(
-                reservation_id=(
-                    reservation.id
-                ),
+            db.add(
+                Ticket(
+                    reservation_id=reservation.id,
 
-                ticket_type=(
-                    TicketType.HALF
-                ),
+                    ticket_type=TicketType.HALF,
 
-                price=event.half_price,
+                    price=event.half_price,
 
-                status=(
-                    TicketStatus.VALID
-                ),
+                    status=TicketStatus.VALID,
+                )
             )
-
-            db.add(ticket)
 
     db.flush()
 
@@ -323,14 +277,15 @@ def simulate_payment(
 
     return PaymentSimulationResponse(
         payment_id=payment.id,
+
         reservation_id=reservation.id,
+
         payment_status=payment.status,
-        reservation_status=(
-            reservation.status
-        ),
-        ticket_count=int(
-            ticket_count
-        ),
+
+        reservation_status=reservation.status,
+
+        ticket_count=int(ticket_count),
+
         message=(
             "Pagamento aprovado e "
             "ingressos gerados."

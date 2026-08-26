@@ -8,6 +8,7 @@ export type Reservation = {
   event_id: number;
 
   full_quantity: number;
+
   half_quantity: number;
 
   total_amount: string;
@@ -21,6 +22,7 @@ export type CreateReservationPayload = {
   event_id: number;
 
   full_quantity: number;
+
   half_quantity: number;
 };
 
@@ -28,6 +30,8 @@ export type EventAvailability = {
   event_id: number;
 
   capacity: number;
+
   reserved: number;
+
   available: number;
 };

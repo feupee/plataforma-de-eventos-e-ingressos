@@ -1,8 +1,4 @@
-from datetime import (
-    datetime,
-    timedelta,
-    timezone,
-)
+from datetime import datetime, timedelta, timezone
 
 from fastapi import (
     APIRouter,
@@ -55,9 +51,7 @@ def get_active_reserved_quantity(
     cutoff = (
         datetime.now(timezone.utc)
         - timedelta(
-            minutes=(
-                RESERVATION_HOLD_MINUTES
-            ),
+            minutes=RESERVATION_HOLD_MINUTES,
         )
     )
 
@@ -66,15 +60,12 @@ def get_active_reserved_quantity(
             func.coalesce(
                 func.sum(
                     Reservation.full_quantity
-                    + Reservation.half_quantity,
+                    + Reservation.half_quantity
                 ),
                 0,
             )
-        )
-        .where(
-            Reservation.event_id
-            == event_id,
-
+        ).where(
+            Reservation.event_id == event_id,
             or_(
                 Reservation.status
                 == ReservationStatus.APPROVED,
@@ -99,7 +90,6 @@ def get_active_reserved_quantity(
 )
 def get_event_availability(
     event_id: int,
-
     db: Session = Depends(get_db),
 ):
     event = db.get(
@@ -113,25 +103,21 @@ def get_event_availability(
             detail="Evento não encontrado.",
         )
 
-    reserved = (
-        get_active_reserved_quantity(
-            db,
-            event_id,
-        )
+    reserved = get_active_reserved_quantity(
+        db,
+        event_id,
+    )
+
+    available = max(
+        event.capacity - reserved,
+        0,
     )
 
     return EventAvailabilityResponse(
         event_id=event.id,
-
         capacity=event.capacity,
-
         reserved=reserved,
-
-        available=max(
-            event.capacity
-            - reserved,
-            0,
-        ),
+        available=available,
     )
 
 
@@ -159,17 +145,13 @@ def create_reservation(
     if requested_quantity <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "Selecione pelo menos "
-                "um ingresso."
-            ),
+            detail="Selecione pelo menos um ingresso.",
         )
 
     event = db.scalar(
         select(Event)
         .where(
-            Event.id
-            == payload.event_id,
+            Event.id == payload.event_id,
         )
         .with_for_update()
     )
@@ -180,61 +162,50 @@ def create_reservation(
             detail="Evento não encontrado.",
         )
 
-    if (
-        event.status
-        != EventStatus.PUBLISHED
-    ):
+    if event.status != EventStatus.PUBLISHED:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
-                "Este evento não está "
-                "disponível para reservas."
+                "Este evento não está disponível "
+                "para reservas."
             ),
         )
 
-    reserved = (
-        get_active_reserved_quantity(
-            db,
-            event.id,
-        )
+    reserved = get_active_reserved_quantity(
+        db,
+        event.id,
     )
 
     available = (
-        event.capacity
-        - reserved
+        event.capacity - reserved
     )
 
-    if (
-        requested_quantity
-        > available
-    ):
+    if requested_quantity > available:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
-                f"Apenas {available} "
-                "ingresso(s) estão disponíveis."
+                f"Apenas {available} ingresso(s) "
+                "estão disponíveis."
             ),
         )
 
     total_amount = (
         event.full_price
         * payload.full_quantity
+
         + event.half_price
         * payload.half_quantity
     )
 
     reservation = Reservation(
+        # O DONO DA RESERVA É O USUÁRIO DO JWT
         user_id=client.id,
 
         event_id=event.id,
 
-        full_quantity=(
-            payload.full_quantity
-        ),
+        full_quantity=payload.full_quantity,
 
-        half_quantity=(
-            payload.half_quantity
-        ),
+        half_quantity=payload.half_quantity,
 
         total_amount=total_amount,
 
@@ -243,8 +214,13 @@ def create_reservation(
 
     db.add(reservation)
 
-    db.commit()
-    db.refresh(reservation)
+    try:
+        db.commit()
+        db.refresh(reservation)
+
+    except Exception:
+        db.rollback()
+        raise
 
     return reservation
 
@@ -275,10 +251,7 @@ def get_reservation(
             detail="Reserva não encontrada.",
         )
 
-    if (
-        reservation.user_id
-        != client.id
-    ):
+    if reservation.user_id != client.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=(

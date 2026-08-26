@@ -1,7 +1,4 @@
-from datetime import (
-    datetime,
-    timezone,
-)
+from datetime import datetime, timezone
 
 from fastapi import (
     APIRouter,
@@ -49,13 +46,9 @@ def build_ticket_response(
     return TicketResponse(
         id=ticket.id,
 
-        reservation_id=(
-            reservation.id
-        ),
+        reservation_id=reservation.id,
 
-        ticket_type=(
-            ticket.ticket_type
-        ),
+        ticket_type=ticket.ticket_type,
 
         price=ticket.price,
 
@@ -63,26 +56,18 @@ def build_ticket_response(
 
         status=ticket.status,
 
-        validated_at=(
-            ticket.validated_at
-        ),
+        validated_at=ticket.validated_at,
 
         event=TicketEventResponse(
             id=event.id,
 
             title=event.title,
 
-            event_date=(
-                event.event_date
-            ),
+            event_date=event.event_date,
 
-            location=(
-                event.location
-            ),
+            location=event.location,
 
-            image_url=(
-                event.image_url
-            ),
+            image_url=event.image_url,
         ),
     )
 
@@ -122,6 +107,7 @@ def list_my_tickets(
             == Event.id,
         )
         .where(
+            # SOMENTE RESERVAS DA CONTA LOGADA
             Reservation.user_id
             == client.id,
 
@@ -150,7 +136,7 @@ def list_my_tickets(
 
 
 # =========================================================
-# VALIDAR
+# VALIDAR INGRESSO
 # =========================================================
 
 
@@ -171,22 +157,16 @@ def validate_ticket(
 ):
     code = payload.code.strip()
 
-    prefix = (
-        "ingressolivre:ticket:"
-    )
+    prefix = "ingressolivre:ticket:"
 
     if code.startswith(prefix):
-        code = code[
-            len(prefix):
-        ]
+        code = code[len(prefix):]
 
     if not code:
         return TicketValidationResponse(
             result="INVALID",
 
-            message=(
-                "Código de ingresso inválido."
-            ),
+            message="Código de ingresso inválido.",
         )
 
     ticket = db.scalar(
@@ -201,9 +181,7 @@ def validate_ticket(
         return TicketValidationResponse(
             result="INVALID",
 
-            message=(
-                "Ingresso não encontrado."
-            ),
+            message="Ingresso não encontrado.",
         )
 
     reservation = db.get(
@@ -215,10 +193,7 @@ def validate_ticket(
         return TicketValidationResponse(
             result="INVALID",
 
-            message=(
-                "Reserva associada "
-                "não encontrada."
-            ),
+            message="Reserva não encontrada.",
 
             ticket_id=ticket.id,
         )
@@ -237,13 +212,9 @@ def validate_ticket(
 
             ticket_id=ticket.id,
 
-            event_id=(
-                reservation.event_id
-            ),
+            event_id=reservation.event_id,
 
-            ticket_type=(
-                ticket.ticket_type
-            ),
+            ticket_type=ticket.ticket_type,
         )
 
     if (
@@ -254,19 +225,15 @@ def validate_ticket(
             result="INVALID",
 
             message=(
-                "A compra associada "
-                "não está aprovada."
+                "A compra associada não "
+                "está aprovada."
             ),
 
             ticket_id=ticket.id,
 
-            event_id=(
-                reservation.event_id
-            ),
+            event_id=reservation.event_id,
 
-            ticket_type=(
-                ticket.ticket_type
-            ),
+            ticket_type=ticket.ticket_type,
         )
 
     if (
@@ -276,19 +243,13 @@ def validate_ticket(
         return TicketValidationResponse(
             result="CANCELLED",
 
-            message=(
-                "Este ingresso foi cancelado."
-            ),
+            message="Este ingresso foi cancelado.",
 
             ticket_id=ticket.id,
 
-            event_id=(
-                reservation.event_id
-            ),
+            event_id=reservation.event_id,
 
-            ticket_type=(
-                ticket.ticket_type
-            ),
+            ticket_type=ticket.ticket_type,
         )
 
     if (
@@ -304,17 +265,11 @@ def validate_ticket(
 
             ticket_id=ticket.id,
 
-            event_id=(
-                reservation.event_id
-            ),
+            event_id=reservation.event_id,
 
-            ticket_type=(
-                ticket.ticket_type
-            ),
+            ticket_type=ticket.ticket_type,
 
-            validated_at=(
-                ticket.validated_at
-            ),
+            validated_at=ticket.validated_at,
         )
 
     ticket.status = (
@@ -322,9 +277,7 @@ def validate_ticket(
     )
 
     ticket.validated_at = (
-        datetime.now(
-            timezone.utc,
-        )
+        datetime.now(timezone.utc)
     )
 
     ticket.validated_by_id = (
@@ -341,22 +294,16 @@ def validate_ticket(
 
         ticket_id=ticket.id,
 
-        event_id=(
-            reservation.event_id
-        ),
+        event_id=reservation.event_id,
 
-        ticket_type=(
-            ticket.ticket_type
-        ),
+        ticket_type=ticket.ticket_type,
 
-        validated_at=(
-            ticket.validated_at
-        ),
+        validated_at=ticket.validated_at,
     )
 
 
 # =========================================================
-# COMPARTILHAR
+# COMPARTILHAMENTO
 # =========================================================
 
 
@@ -370,8 +317,7 @@ def get_shared_ticket(
     db: Session = Depends(get_db),
 ):
     ticket = db.scalar(
-        select(Ticket)
-        .where(
+        select(Ticket).where(
             Ticket.code == code,
         )
     )
@@ -407,9 +353,7 @@ def get_shared_ticket(
     return SharedTicketResponse(
         id=ticket.id,
 
-        ticket_type=(
-            ticket.ticket_type
-        ),
+        ticket_type=ticket.ticket_type,
 
         status=ticket.status,
 
@@ -420,17 +364,11 @@ def get_shared_ticket(
 
             title=event.title,
 
-            event_date=(
-                event.event_date
-            ),
+            event_date=event.event_date,
 
-            location=(
-                event.location
-            ),
+            location=event.location,
 
-            image_url=(
-                event.image_url
-            ),
+            image_url=event.image_url,
         ),
     )
 
