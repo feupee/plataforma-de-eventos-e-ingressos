@@ -1,3 +1,13 @@
 .env
-venv/
+.env.*
+!.env.example
+
 __pycache__/
+*.pyc
+.venv/
+venv/
+
+node_modules/
+.next/
+
+.vercel/

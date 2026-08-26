@@ -1,3 +1,7 @@
+import os
+
+from dotenv import load_dotenv
+
 from fastapi import FastAPI
 
 from fastapi.middleware.cors import (
@@ -29,6 +33,22 @@ from app.routers.tickets import (
 )
 
 
+# =========================================================
+# VARIÁVEIS DE AMBIENTE
+# =========================================================
+
+load_dotenv()
+
+
+FRONTEND_URL = os.getenv(
+    "FRONTEND_URL"
+)
+
+
+# =========================================================
+# FASTAPI
+# =========================================================
+
 app = FastAPI(
     title="IngressoLivre API",
 
@@ -37,17 +57,32 @@ app = FastAPI(
         "IngressoLivre."
     ),
 
-    version="0.1.0",
+    version="1.0.0",
 )
+
+
+# =========================================================
+# CORS
+# =========================================================
+
+allowed_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+
+# Em produção, adiciona automaticamente
+# a URL do frontend hospedado na Vercel.
+if FRONTEND_URL:
+    allowed_origins.append(
+        FRONTEND_URL.rstrip("/")
+    )
 
 
 app.add_middleware(
     CORSMiddleware,
 
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=allowed_origins,
 
     allow_credentials=True,
 
@@ -56,6 +91,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# =========================================================
+# ROTAS
+# =========================================================
 
 app.include_router(
     auth_router
@@ -81,6 +120,10 @@ app.include_router(
     tickets_router
 )
 
+
+# =========================================================
+# ROTAS BÁSICAS
+# =========================================================
 
 @app.get("/")
 def root():
