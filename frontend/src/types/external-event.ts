@@ -6,6 +6,8 @@ export type ExternalEvent = {
   date: string | null;
   time: string | null;
 
+  timezone: string | null;
+
   venue: string | null;
 
   city: string | null;
@@ -17,6 +19,7 @@ export type ExternalEvent = {
   ticketmaster_url: string | null;
 
   price_min: number | null;
+
   price_max: number | null;
 
   currency: string | null;
